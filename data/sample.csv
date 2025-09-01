@@ -1,0 +1,6 @@
+id,email,age,country
+1,alice@example.com,29,US
+2,,35,US
+3,bob[at]example.com,41,UK
+3,bob@example.com,41,UK
+4,carol@example.com,,IN

@@ -1,0 +1,15 @@
+services:
+  hiveserver2:
+    image: apache/hive:4.0.0
+    container_name: hive4
+    environment:
+      - SERVICE_NAME=hiveserver2
+    ports:
+      - "10000:10000"   # JDBC
+      - "10002:10002"   # Web UI
+    volumes:
+      - ./data:/opt/hive/data
+      - hive-warehouse:/opt/hive/data/warehouse  # persist Derby files
+
+volumes:
+  hive-warehouse:

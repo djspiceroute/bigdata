@@ -1,0 +1,66 @@
+version: "3.8"
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.3.5-java11
+    container_name: nn
+    environment:
+      - CLUSTER_NAME=demo
+    ports:
+      - "9870:9870"   # HDFS NameNode UI
+      - "9000:9000"   # HDFS RPC
+    volumes:
+      - namenode:/hadoop/dfs/name
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870/"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.3.5-java11
+    container_name: dn
+    environment:
+      - SERVICE_PRECONDITION=nn:9870
+      - CLUSTER_NAME=demo
+      - CORE_CONF_fs_defaultFS=hdfs://nn:9000
+    volumes:
+      - datanode:/hadoop/dfs/data
+    depends_on:
+      - namenode
+
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    container_name: hive-pg
+    environment:
+      - POSTGRES_DB=metastore
+      - POSTGRES_USER=hive
+      - POSTGRES_PASSWORD=hive
+    volumes:
+      - metastore-pg:/var/lib/postgresql/data
+
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    environment:
+      - SERVICE_PRECONDITION=nn:9000 hive-pg:5432
+      - HIVE_CORE_CONF_fs_defaultFS=hdfs://nn:9000
+    depends_on:
+      - namenode
+      - hive-metastore-postgresql
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-server
+    environment:
+      - SERVICE_PRECONDITION=hive-metastore:9083
+      - HIVE_CORE_CONF_fs_defaultFS=hdfs://nn:9000
+    ports:
+      - "10000:10000" # HiveServer2 JDBC
+      - "10002:10002" # Web UI
+    depends_on:
+      - hive-metastore
+
+volumes:
+  namenode:
+  datanode:
+  metastore-pg:
